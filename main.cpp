@@ -1,6 +1,8 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <vector>
+#include <SFML/Audio.hpp>
+#include <MATH.h>
 
 //Window
 #define WIDE 800
@@ -57,15 +59,47 @@ int main()
   map[3][11] = true;
   map[3][12] = true;
   map[8][7] = true;
-  map[8][8] = true;
-  map[8][9] = true;
   map[8][10] = true;
   map[8][11] = true;
   map[8][12] = true;
   map[3][12] = true;
   map[4][12] = true;
   map[7][12] = true;
-  map[8][12] = true;
+  map[8][13] = true;
+  map[8][14] = true;
+  map[8][15] = true;
+  map[8][16] = true;
+  map[8][17] = true;
+  map[8][18] = true;
+  map[7][18] = true;
+  map[6][18] = true;
+  map[5][18] = true;
+  map[4][18] = true;
+  map[3][18] = true;
+  map[3][17] = true;
+  map[3][16] = true;
+  map[3][15] = true;
+  map[9][6] = true;
+  map[10][6] = true;
+  map[11][6] = true;
+  map[12][6] = true;
+  map[12][7] = true;
+  map[12][8] = true;
+  map[12][9] = true;
+  map[12][10] = true;
+  map[12][11] = true;
+  map[12][12] = true;
+  map[11][12] = true;
+  for(int i=0; i<tileH; i++)
+  {
+    map[i][0] = true;
+    map[i][tileW-1] = true;
+  }
+  for(int i=0; i<tileW; i++)
+  {
+    map[0][i] = true;
+    map[tileH-1][i] = true;
+  }
 
   for(int i=0; i<map.size(); i++)
   {
@@ -95,40 +129,71 @@ livesDisp.setFont(font);
 livesDisp.setCharacterSize(24);
 livesDisp.setColor(sf::Color::Red);
 
+sf::SoundBuffer theme_buffer;
+if(!theme_buffer.loadFromFile("Assets/theme.wav"))
+{
+  std::cout << "Error Loading Theme Sound!" << std::endl;
+}
+
+sf::SoundBuffer grunt_buffer;
+if(!grunt_buffer.loadFromFile("Assets/grunt.wav"))
+{
+  std::cout << "Error Loading Grunt Sound!" << std::endl;
+}
 
 sf::Texture wall_texture;
 if(!wall_texture.loadFromFile("Assets/stone_wall.png"))
 {
-  std::cout << "Error Loading Texture" << std::endl;
+  std::cout << "Error Loading Wall Texture!" << std::endl;
 }
-
 
 sf::Texture hero_texture;
 if(!hero_texture.loadFromFile("Assets/hero.png"))
 {
-  std::cout << "Error Loading Texture" << std::endl;
+  std::cout << "Error Loading Hero Texture!" << std::endl;
 }
 
 sf::Texture enemy_texture;
 if(!enemy_texture.loadFromFile("Assets/enemy1.png"))
 {
-  std::cout << "Error Loading Texture" << std::endl;
+  std::cout << "Error Loading Enemy Texture!" << std::endl;
+}
+
+sf::Texture enemy2_texture;
+if(!enemy2_texture.loadFromFile("Assets/enemy2.png"))
+{
+  std::cout << "Error Loading Enemy2 Texture!" << std::endl;
 }
 
 sf::Texture stone_texture;
 if(!stone_texture.loadFromFile("Assets/stone.png"))
 {
-  std::cout << "Error Loading Texture" << std::endl;
+  std::cout << "Error Loading Stone Texture!" << std::endl;
 }
+
+sf::Sound grunt;
+grunt.setBuffer(grunt_buffer);
+grunt.setPitch(0.8);
+
+sf::Sound theme;
+theme.setBuffer(theme_buffer);
+theme.setPitch(0.6);
+theme.setLoop(true);
 
 sf::Sprite enemy;
 enemy.setScale(sf::Vector2f(3,3));
 enemy.setTexture(enemy_texture);
-enemy.setPosition(0,500);
+enemy.setPosition(TILESIZE*0, TILESIZE*7);
+
+sf::Sprite enemy2;
+enemy2.setScale(sf::Vector2f(2,2));
+enemy2.setTexture(enemy2_texture);
+enemy2.setPosition(TILESIZE*5, TILESIZE*15);
 
 sf::Sprite hero;
 hero.setTexture(hero_texture);
 hero.setScale(sf::Vector2f(2,2));
+hero.setPosition(TILESIZE*1, TILESIZE*1);
 
 std::vector<sf::Sprite> wallArr;
 for(int i=0; i<map.size(); i++)
@@ -156,10 +221,15 @@ int enemyDir = 0;
 
 double heroSpeed = 0.5;
 
+double enemy2X = 0.5;
+double enemy2Y = 0.5;
+double enemy2Dist = 0;
+
 int lives = 5;
 
 bool takingDamage = false;
 
+theme.play();
 
 //Game Loop
   while(window.isOpen())
@@ -226,11 +296,32 @@ bool takingDamage = false;
       enemyDir = 0;
     }
 
+    enemy2Dist = sqrt(pow(hero.getPosition().x - enemy2.getPosition().x, 2)
+    + pow(hero.getPosition().y - enemy2.getPosition().y, 2));
+    enemy2X = (hero.getPosition().x - enemy2.getPosition().x)/enemy2Dist;
+    enemy2Y = (hero.getPosition().y - enemy2.getPosition().y)/enemy2Dist;
+    enemy2.move(enemy2X/3, enemy2Y/3);
+
     if(hero.getGlobalBounds().intersects(enemy.getGlobalBounds()))
     {
       if(takingDamage == false)
       {
         lives--;
+        grunt.play();
+        takingDamage = true;
+      }
+    }
+    else
+    {
+      takingDamage = false;
+    }
+
+    if(hero.getGlobalBounds().intersects(enemy2.getGlobalBounds()))
+    {
+      if(takingDamage == false)
+      {
+        lives--;
+        grunt.play();
         takingDamage = true;
       }
     }
@@ -257,6 +348,7 @@ bool takingDamage = false;
     }
     window.draw(hero);
     window.draw(enemy);
+    window.draw(enemy2);
     window.draw(livesDisp);
     window.display();
   }
